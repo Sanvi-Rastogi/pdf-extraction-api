@@ -235,7 +235,17 @@ if __name__ == "__main__":
     run(include_ocr=args.ocr, include_marker=args.marker)
 
 
+#Clone the repo
+# git clone https://github.com/Sanvi-Rastogi/pdf-extraction-api.git
+# cd pdf-extraction-api
 
+#Create folders
+# mkdir -p test_pdfs results marker_cache docling_cache
+
+# Copy your PDFs into test_pdfs/
+
+# Update docker-compose.yml — change SKIP_MARKER to false (as sys will have enough memory)
+
+#Build and run:
 # docker-compose build
-# docker-compose run pdf-extractor (fast loaders only)
-# docker-compose run pdf-extractor python run_extraction.py --ocr --marker (run everything)
+# docker-compose run pdf-extractor python run_extraction.py --ocr --marker
