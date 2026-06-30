@@ -1,0 +1,14 @@
+services:
+  pdf-extractor:
+    build: .
+    container_name: pdf-extraction-tool
+    volumes:
+      - ./test_pdfs:/app/test_pdfs
+      - ./results:/app/results
+      - ./marker_cache:/root/.cache/datalab
+      - ./docling_cache:/root/.cache/docling
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SKIP_MARKER=true
+    stdin_open: true
+    tty: true

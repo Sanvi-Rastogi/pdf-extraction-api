@@ -1,0 +1,26 @@
+# LangChain (needed for PyPDF and Unstructured loaders)
+langchain
+langchain-community
+
+# PDF loaders
+pypdf
+pdfplumber
+pymupdf
+pdf2image
+pytesseract
+pillow
+
+# Unstructured
+unstructured[pdf]
+
+# Docling
+docling
+
+# Marker (only used on Linux with enough RAM)
+marker-pdf
+
+# Utilities
+psutil
+python-dotenv
+pandas
+rich

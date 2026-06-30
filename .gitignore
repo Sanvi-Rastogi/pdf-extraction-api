@@ -1,0 +1,8 @@
+test_pdfs/*.pdf
+results/
+marker_cache/
+docling_cache/
+__pycache__/
+*.pyc
+.env
+.DS_Store
