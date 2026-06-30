@@ -1,15 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# run_extraction.py
-# CLI script that runs all PDF extraction loaders on every PDF found
-# in the test_pdfs/ folder. No UI, no API — just run from terminal.
-#
-# Usage:
-#   python run_extraction.py                    # run fast loaders only
-#   python run_extraction.py --ocr               # also run Unstructured OCR
-#   python run_extraction.py --marker             # also run Marker
-#   python run_extraction.py --ocr --marker       # run everything
-# ─────────────────────────────────────────────────────────────────────────────
-
 import os
 import json
 import argparse
@@ -38,8 +26,6 @@ SKIP_MARKER = os.getenv("SKIP_MARKER", "false").lower() == "true"
 if not SKIP_MARKER:
     from extractors import marker_extractor
 
-
-# ── Save Results ─────────────────────────────────────────────────────────────
 
 def save_result(result: dict, filename: str, loader: str):
     """
@@ -76,9 +62,7 @@ def save_result(result: dict, filename: str, loader: str):
             f.write("=== EXTRACTED CONTENT ===\n\n")
             f.write(result["content"])
 
-
-# ── Main Runner ───────────────────────────────────────────────────────────────
-
+# main 
 def run(include_ocr: bool, include_marker: bool):
     pdf_files = list(PDF_DIR.glob("*.pdf"))
 
@@ -98,7 +82,7 @@ def run(include_ocr: bool, include_marker: bool):
 
         results = {}
 
-        # ── Always run these fast loaders ────────────────────────────────────
+        # Always run fast loaders
         console.print("[yellow]Running PyPDF...[/yellow]")
         results["pypdf"] = pypdf_extractor.extract(str(pdf_path))
 
@@ -116,14 +100,14 @@ def run(include_ocr: bool, include_marker: bool):
         console.print("[yellow]Running Docling...[/yellow]")
         results["docling"] = docling_extractor.extract(str(pdf_path))
 
-        # ── Optional: Unstructured OCR (slow) ─────────────────────────────────
+        # Optional: Unstructured OCR bec slow
         if include_ocr:
             console.print("[yellow]Running Unstructured OCR hi_res (slow)...[/yellow]")
             results["unstructured_ocr"] = unstructured_extractor.extract(
                 str(pdf_path), strategy="hi_res"
             )
 
-        # ── Optional: Marker (needs lots of RAM) ──────────────────────────────
+        # Optional: Marker bec needs lots of RAM
         if include_marker:
             if SKIP_MARKER:
                 console.print(
@@ -138,11 +122,11 @@ def run(include_ocr: bool, include_marker: bool):
                 console.print("[yellow]Running Marker (this takes time)...[/yellow]")
                 results["marker"] = marker_extractor.extract(str(pdf_path))
 
-        # ── Save every result to results/ folder ──────────────────────────────
+        # Save to results folder
         for loader_key, result in results.items():
             save_result(result, pdf_path.name, loader_key)
 
-        # ── Build and print summary table ─────────────────────────────────────
+        # print summary table
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("Loader", width=28)
         table.add_column("Status", width=10)
@@ -216,8 +200,7 @@ def run(include_ocr: bool, include_marker: bool):
         console.print(f"[bold]Full extracted text saved as .txt files in results/[/bold]\n")
 
 
-# ── Entry Point ───────────────────────────────────────────────────────────────
-
+# entry point
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run PDF extraction benchmark across multiple loaders"

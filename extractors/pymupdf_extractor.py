@@ -20,22 +20,18 @@ def extract(file_path: str) -> dict:
         mem_before = get_memory_snapshot()
         start = time.time()
 
-        # Open the PDF document
         doc = fitz.open(file_path)
 
         all_content = []
         total_images = 0
 
-        # Store page count BEFORE closing
         page_count = len(doc)
 
         for page_num in range(page_count):
             page = doc[page_num]
 
-            # Extract text preserving reading order
             text = page.get_text("text")
 
-            # Detect images on this page
             images = page.get_images(full=True)
             total_images += len(images)
 
@@ -50,7 +46,6 @@ def extract(file_path: str) -> dict:
                 f"--- Page {page_num + 1} ---\n{text}{image_notes}"
             )
 
-        # Close AFTER we are done with all pages
         doc.close()
 
         elapsed = round(time.time() - start, 2)

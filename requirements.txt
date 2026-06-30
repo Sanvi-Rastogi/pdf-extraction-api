@@ -7,7 +7,7 @@ pypdf
 pdfplumber
 pymupdf
 pdf2image
-pytesseract
+pytesseract 
 pillow
 
 # Unstructured
