@@ -34,5 +34,8 @@ RUN pip install --no-cache-dir --timeout=300 -r requirements.txt
 COPY . .
 
 RUN mkdir -p test_pdfs results
+#Fix permissions — important on Linux
+# RUN mkdir -p test_pdfs results && \
+#     chmod -R 777 test_pdfs results
 
 CMD ["python", "run_extraction.py"]

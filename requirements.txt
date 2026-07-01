@@ -12,6 +12,7 @@ pillow
 
 # Unstructured
 unstructured[pdf]
+python-magic
 
 # Docling
 docling

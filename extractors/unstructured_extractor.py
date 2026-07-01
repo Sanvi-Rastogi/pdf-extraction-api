@@ -48,6 +48,17 @@ def extract(file_path: str, strategy: str = "fast") -> dict:
             "content": content,
             "memory": measure_memory_delta(mem_before, mem_after),
         }
+    except ImportError as e:
+        # Specific message for missing system dependencies on Linux
+        return {
+            "loader": loader_name,
+            "status": "failed",
+            "error": (
+                f"Missing dependency: {e}. "
+                f"On Linux ensure libmagic1 is installed: "
+                f"apt-get install libmagic1"
+            )
+        }
     except Exception as e:
         return {
             "loader": loader_name,
