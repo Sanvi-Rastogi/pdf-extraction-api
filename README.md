@@ -36,48 +36,6 @@ pdf-extraction-api/
 
 ---
 
-## Output
-
-After running, the `results/` folder contains:
-
-```
-results/
-├── yourfile__pypdf.json                  # metrics only
-├── yourfile__pypdf.txt                   # full extracted text
-├── yourfile__pdfplumber.json
-├── yourfile__pdfplumber.txt
-├── yourfile__pymupdf.json
-├── yourfile__pymupdf.txt
-├── yourfile__unstructured_fast.json
-├── yourfile__unstructured_fast.txt
-├── yourfile__docling.json
-├── yourfile__docling.txt                 # markdown formatted
-├── yourfile__marker.json
-├── yourfile__marker.txt                  # markdown with equations
-└── comparison__yourfile.json             # side-by-side summary
-```
-
-Each `.txt` file contains:
-
-```
-=== Loader Name | filename.pdf ===
-
-Status      : success
-Time        : 0.44s
-Pages       : 11
-Chars       : 29711
-Word Count  : 4498
-Has Tables  : True
-Has Headers : False
-Images      : 0
-
-=== EXTRACTED CONTENT ===
-
-... full extracted text here ...
-```
-
----
-
 ## Memory Tracking
 
 Every loader tracks:
@@ -163,22 +121,6 @@ docker-compose run pdf-extractor python run_extraction.py --ocr
 docker-compose run pdf-extractor python run_extraction.py --marker
 ```
 
-### Step 6: View results
-
-```bash
-# List all output files
-ls results/
-
-# View comparison summary
-cat results/comparison__yourfile.json
-
-# View extracted text from a specific loader
-cat results/yourfile__docling.txt
-
-# Check word counts across all loaders
-grep "Word Count" results/yourfile__*.txt
-```
-
 ---
 
 ## Usage on Mac
@@ -235,12 +177,46 @@ docker-compose -f docker-compose.mac.yml run pdf-extractor \
 > is set in `docker-compose.mac.yml`. Marker endpoint returns a
 > graceful skip message instead of crashing.
 
-### Step 6: View results
+---
 
-```bash
-ls results/
-cat results/comparison__yourfile.json
-grep "Word Count" results/yourfile__*.txt
+## Output
+
+After running, the `results/` folder contains:
+
+```
+results/
+├── yourfile__pypdf.json                  # metrics only
+├── yourfile__pypdf.txt                   # full extracted text
+├── yourfile__pdfplumber.json
+├── yourfile__pdfplumber.txt
+├── yourfile__pymupdf.json
+├── yourfile__pymupdf.txt
+├── yourfile__unstructured_fast.json
+├── yourfile__unstructured_fast.txt
+├── yourfile__docling.json
+├── yourfile__docling.txt                 # markdown formatted
+├── yourfile__marker.json
+├── yourfile__marker.txt                  # markdown with equations
+└── comparison__yourfile.json             # side-by-side summary
+```
+
+Each `.txt` file contains:
+
+```
+=== Loader Name | filename.pdf ===
+
+Status      : success
+Time        : 0.44s
+Pages       : 11
+Chars       : 29711
+Word Count  : 4498
+Has Tables  : True
+Has Headers : False
+Images      : 0
+
+=== EXTRACTED CONTENT ===
+
+... full extracted text here ...
 ```
 
 ---
@@ -267,14 +243,17 @@ grep "Word Count" results/yourfile__*.txt
 
 ## Why Two Dockerfiles?
 
-|                                 | `Dockerfile` (Mac) | `Dockerfile.linux` (Linux) |
-| ------------------------------- | ------------------ | -------------------------- |
-| Marker pre-downloaded           | ❌                 | ✅                         |
-| Docling pre-downloaded          | ✅                 | ✅                         |
-| Unstructured OCR pre-downloaded | ✅                 | ✅                         |
-| `SKIP_MARKER`                   | `true`             | `false`                    |
-| Build time                      | ~15-20 min         | ~30-40 min                 |
-| Image size                      | ~15GB              | ~22GB                      |
+The Mac version (`Dockerfile`) skips pre-downloading Marker models
+since Mac does not have enough free RAM to run Marker. It sets
+`SKIP_MARKER=true` and takes around 15-20 minutes to build.
+
+The Linux version (`Dockerfile.linux`) pre-downloads all models
+including Marker (~3GB) during build so the tool runs completely
+offline after that. It sets `SKIP_MARKER=false` and takes around
+30-40 minutes to build due to the additional model downloads.
+
+Both versions pre-download Docling and Unstructured OCR models
+during build so those also work offline after the first build.
 
 ---
 
@@ -293,15 +272,3 @@ Tested on: 11-page research paper with tables and figures
 | Marker           | TBD\*  | ✅     | ✅     | TBD\*  | TBD\*     |
 
 \*Marker requires Linux with 6GB+ free RAM — not testable on Mac.
-
----
-
-## Tech Stack
-
-| Component        | Technology                                                |
-| ---------------- | --------------------------------------------------------- |
-| Containerization | Docker + Docker Compose                                   |
-| PDF Loaders      | PyPDF, pdfplumber, PyMuPDF, Unstructured, Docling, Marker |
-| Memory Tracking  | psutil + PyTorch CUDA                                     |
-| Output Format    | JSON (metrics) + TXT (extracted content)                  |
-| Language         | Python 3.11                                               |
