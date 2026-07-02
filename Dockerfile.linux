@@ -28,11 +28,12 @@ COPY . .
 
 RUN mkdir -p test_pdfs results && chmod -R 777 test_pdfs results
 
-# Pre-download Docling models
+# Pre-download Docling models into the image
 RUN python -c "
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.datamodel.base_models import InputFormat
+print('Downloading Docling models...')
 opts = PdfPipelineOptions()
 opts.do_ocr = False
 opts.do_table_structure = True
@@ -44,10 +45,19 @@ DocumentConverter(
 print('Docling models ready.')
 "
 
-# Pre-download Unstructured models (fast mode only on Mac)
+# Pre-download Unstructured OCR YOLO model into the image
 RUN python -c "
+print('Downloading Unstructured OCR models...')
 from unstructured.partition.pdf import partition_pdf
 print('Unstructured models ready.')
-" || echo "Skipped"
+" || echo "Unstructured pre-download failed — will retry at runtime"
+
+# Pre-download Marker models into the image (~3GB)
+RUN python -c "
+print('Downloading Marker models (this takes ~5-10 mins)...')
+from marker.models import create_model_dict
+models = create_model_dict()
+print('Marker models ready.')
+"
 
 CMD ["python", "run_extraction.py"]

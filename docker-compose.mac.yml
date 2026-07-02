@@ -2,13 +2,13 @@ services:
   pdf-extractor:
     build:
       context: .
-      dockerfile: Dockerfile.linux
+      dockerfile: Dockerfile
     container_name: pdf-extraction-tool
     volumes:
       - ./test_pdfs:/app/test_pdfs
       - ./results:/app/results
     environment:
       - PYTHONUNBUFFERED=1
-      - SKIP_MARKER=false
+      - SKIP_MARKER=true
     stdin_open: true
     tty: true
