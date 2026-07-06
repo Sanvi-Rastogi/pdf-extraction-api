@@ -25,3 +25,9 @@ psutil
 python-dotenv
 pandas
 rich
+
+# For semantic chunking
+sentence-transformers
+nltk
+numpy
+scikit-learn

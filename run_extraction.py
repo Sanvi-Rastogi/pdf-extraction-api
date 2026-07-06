@@ -13,6 +13,8 @@ from extractors import (
     unstructured_extractor,
     docling_extractor,
 )
+from typing import List
+from chunkers import naive_chunker, layout_chunker, semantic_chunker, table_chunker
 
 console = Console()
 
@@ -62,8 +64,168 @@ def save_result(result: dict, filename: str, loader: str):
             f.write("=== EXTRACTED CONTENT ===\n\n")
             f.write(result["content"])
 
+
+def save_chunks(chunks: List[dict], filename: str, loader: str, chunker: str):
+    """
+    Save chunks to results folder as JSON.
+    Each chunk has its content, metadata, and token estimate.
+    """
+    safe_loader = loader.replace(" ", "_").lower()
+    safe_chunker = chunker.replace(" ", "_").lower()
+    safe_file = Path(filename).stem
+
+    out_path = RESULTS_DIR / \
+        f"{safe_file}__{safe_loader}__{safe_chunker}_chunks.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump({
+            "file": filename,
+            "loader": loader,
+            "chunker": chunker,
+            "total_chunks": len(chunks),
+            "chunks": chunks
+        }, f, indent=2)
+
+    console.print(
+        f"[green]✓ {len(chunks)} chunks saved to {out_path}[/green]"
+    )
+    return len(chunks)
+
+def run_chunking(results: dict, pdf_name: str):
+    """
+    Run chunking on extracted content from each loader.
+    Different loaders get different chunking strategies:
+
+    - pypdf/pymupdf    → naive chunker (sentence-aware)
+    - unstructured     → layout chunker (element-type aware)
+    - pdfplumber       → table chunker (preserves tables)
+    - docling          → naive chunker (already markdown-structured)
+    - semantic         → semantic chunker (embedding-based) on best result
+    """
+    console.print(Panel(
+        "[bold cyan]Running Semantic Chunking...[/bold cyan]",
+        title="CHUNKING"
+    ))
+
+    chunk_summary = []
+
+    for loader_key, result in results.items():
+        if result.get("status") != "success":
+            continue
+
+        content = result.get("content", "")
+        if not content:
+            continue
+
+        loader_name = result.get("loader", loader_key)
+        console.print(f"\n[yellow]Chunking {loader_name}...[/yellow]")
+
+        try:
+            # Choose chunking strategy based on loader
+            if loader_key == "pdfplumber":
+                # pdfplumber has [TABLE N] markers — use table chunker
+                chunks = table_chunker.chunk(content)
+                chunker_name = "table"
+
+            elif loader_key == "unstructured_fast":
+                # Unstructured has [ElementType] markers — use layout chunker
+                chunks = layout_chunker.chunk(content)
+                chunker_name = "layout"
+
+            elif loader_key == "docling":
+                # Docling outputs clean markdown — naive works well
+                chunks = naive_chunker.chunk(content, max_tokens=512)
+                chunker_name = "naive"
+
+            else:
+                # pypdf, pymupdf — plain text, use naive chunker
+                chunks = naive_chunker.chunk(content, max_tokens=512)
+                chunker_name = "naive"
+
+            # Save chunks
+            total = save_chunks(chunks, pdf_name, loader_name, chunker_name)
+
+            chunk_summary.append({
+                "loader": loader_name,
+                "chunker": chunker_name,
+                "total_chunks": total,
+                "avg_chunk_chars": round(
+                    sum(c["char_count"] for c in chunks) / max(total, 1), 1
+                ),
+                "avg_tokens": round(
+                    sum(c["token_estimate"] for c in chunks) / max(total, 1), 1
+                )
+            })
+
+        except Exception as e:
+            console.print(f"[red]Chunking failed for {loader_name}: {e}[/red]")
+
+    # Run semantic chunker on best result (most chars — usually Docling)
+    best_result = max(
+        [r for r in results.values() if r.get("status") == "success"],
+        key=lambda x: x.get("total_chars", 0),
+        default=None
+    )
+
+    if best_result:
+        console.print(
+            f"\n[yellow]Running semantic chunker on best result "
+            f"({best_result.get('loader')})...[/yellow]"
+        )
+        try:
+            semantic_chunks = semantic_chunker.chunk(
+                best_result.get("content", ""),
+                max_tokens=512,
+                similarity_threshold=0.3
+            )
+            total = save_chunks(
+                semantic_chunks,
+                pdf_name,
+                best_result.get("loader"),
+                "semantic"
+            )
+            chunk_summary.append({
+                "loader": best_result.get("loader"),
+                "chunker": "semantic",
+                "total_chunks": total,
+                "avg_chunk_chars": round(
+                    sum(c["char_count"] for c in semantic_chunks) / max(total, 1), 1
+                ),
+                "avg_tokens": round(
+                    sum(c["token_estimate"] for c in semantic_chunks) / max(total, 1), 1
+                )
+            })
+        except Exception as e:
+            console.print(f"[red]Semantic chunking failed: {e}[/red]")
+
+    # Print chunking summary table
+    chunk_table = Table(show_header=True, header_style="bold magenta")
+    chunk_table.add_column("Loader", width=28)
+    chunk_table.add_column("Chunker", width=12)
+    chunk_table.add_column("Total Chunks", width=14)
+    chunk_table.add_column("Avg Chars/Chunk", width=16)
+    chunk_table.add_column("Avg Tokens/Chunk", width=17)
+
+    for entry in chunk_summary:
+        chunk_table.add_row(
+            entry["loader"],
+            entry["chunker"],
+            str(entry["total_chunks"]),
+            str(entry["avg_chunk_chars"]),
+            str(entry["avg_tokens"])
+        )
+
+    console.print("\n")
+    console.print(chunk_table)
+
+    # Save chunk summary
+    summary_path = RESULTS_DIR / f"chunk_summary__{Path(pdf_name).stem}.json"
+    with open(summary_path, "w") as f:
+        json.dump(chunk_summary, f, indent=2)
+
+    console.print(f"\n[bold]Chunk summary saved to {summary_path}[/bold]")
+
 # main 
-def run(include_ocr: bool, include_marker: bool):
+def run(include_ocr: bool, include_marker: bool, include_chunk: bool = False):
     pdf_files = list(PDF_DIR.glob("*.pdf"))
 
     if not pdf_files:
@@ -199,6 +361,10 @@ def run(include_ocr: bool, include_marker: bool):
         console.print(f"\n[bold]Summary saved to {comp_path}[/bold]")
         console.print(f"[bold]Full extracted text saved as .txt files in results/[/bold]\n")
 
+        if include_chunk:
+            run_chunking(results, pdf_path.name)
+
+
 
 # entry point
 if __name__ == "__main__":
@@ -213,9 +379,13 @@ if __name__ == "__main__":
         "--marker", action="store_true",
         help="Also run Marker (needs 6GB+ RAM)"
     )
+    parser.add_argument(
+        "--chunk", action="store_true",
+        help="Run semantic chunking on extracted content"
+    )
     args = parser.parse_args()
 
-    run(include_ocr=args.ocr, include_marker=args.marker)
+    run(include_ocr=args.ocr, include_marker=args.marker, include_chunk=args.chunk)
 
 
 #Clone the repo
