@@ -1,11 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# naive_chunker.py
-# Inspired by RAGFlow's naive chunking strategy.
-# Splits text at sentence boundaries rather than arbitrary character counts.
-# Keeps sentences together as long as they fit within the token limit.
-# Never cuts mid-sentence unlike RecursiveCharacterTextSplitter.
-# ─────────────────────────────────────────────────────────────────────────────
-
 import re
 from typing import List
 

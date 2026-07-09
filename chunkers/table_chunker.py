@@ -1,11 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# table_chunker.py
-# Inspired by RAGFlow's table chunking strategy.
-# Extracts tables as atomic chunks and keeps surrounding context with them.
-# A table chunk = [heading above table] + [table content] + [caption below]
-# This ensures when a user asks about table data, the full context is present.
-# ─────────────────────────────────────────────────────────────────────────────
-
 import re
 from typing import List
 

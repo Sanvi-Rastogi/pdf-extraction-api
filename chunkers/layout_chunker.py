@@ -1,14 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# layout_chunker.py
-# Inspired by RAGFlow's layout-aware chunking strategy.
-# Uses document element types (Title, NarrativeText, Table, etc.)
-# detected by Unstructured loader to create semantically meaningful chunks.
-#
-# Key idea: a Title element starts a new chunk boundary.
-# Content under a heading belongs together until the next heading appears.
-# Tables are kept as single atomic chunks — never split across chunks.
-# ─────────────────────────────────────────────────────────────────────────────
-
 import re
 from typing import List
 

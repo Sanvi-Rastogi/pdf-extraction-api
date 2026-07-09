@@ -1,16 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# semantic_chunker.py
-# Inspired by RAGFlow's semantic chunking strategy.
-# Uses sentence embeddings to detect topic shifts in the text.
-#
-# Key idea: sentences that are semantically similar belong in the same chunk.
-# When similarity between consecutive sentences drops sharply,
-# that signals a topic shift → start a new chunk there.
-#
-# This is more sophisticated than naive sentence-count chunking because
-# it understands meaning, not just position.
-# ─────────────────────────────────────────────────────────────────────────────
-
 import re
 from typing import List
 import numpy as np
