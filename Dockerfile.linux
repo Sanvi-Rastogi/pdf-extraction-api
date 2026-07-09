@@ -29,35 +29,44 @@ COPY . .
 RUN mkdir -p test_pdfs results && chmod -R 777 test_pdfs results
 
 # Pre-download Docling models into the image
-RUN python -c "
+RUN python <<EOF
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.datamodel.base_models import InputFormat
-print('Downloading Docling models...')
+
+print("Downloading Docling models...")
+
 opts = PdfPipelineOptions()
 opts.do_ocr = False
 opts.do_table_structure = True
+
 DocumentConverter(
     format_options={
         InputFormat.PDF: PdfFormatOption(pipeline_options=opts)
     }
 )
-print('Docling models ready.')
-"
+
+print("Docling models ready.")
+EOF
 
 # Pre-download Unstructured OCR YOLO model into the image
-RUN python -c "
-print('Downloading Unstructured OCR models...')
+RUN python <<EOF || echo "Unstructured pre-download failed — will retry at runtime"
+print("Downloading Unstructured OCR models...")
+
 from unstructured.partition.pdf import partition_pdf
-print('Unstructured models ready.')
-" || echo "Unstructured pre-download failed — will retry at runtime"
+
+print("Unstructured models ready.")
+EOF
 
 # Pre-download Marker models into the image (~3GB)
-RUN python -c "
-print('Downloading Marker models (this takes ~5-10 mins)...')
+RUN python <<EOF
+print("Downloading Marker models (this takes ~5-10 mins)...")
+
 from marker.models import create_model_dict
+
 models = create_model_dict()
-print('Marker models ready.')
-"
+
+print("Marker models ready.")
+EOF
 
 CMD ["python", "run_extraction.py"]
