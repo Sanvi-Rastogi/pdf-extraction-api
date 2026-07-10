@@ -1,10 +1,8 @@
 import os
-import time
 import psutil
 
 
 def get_memory_snapshot() -> dict:
-    """Take a snapshot of current memory usage."""
     process = psutil.Process(os.getpid())
     vm = psutil.virtual_memory()
 
@@ -42,7 +40,6 @@ def get_memory_snapshot() -> dict:
 
 
 def measure_memory_delta(before: dict, after: dict) -> dict:
-    """Calculate memory difference between two snapshots."""
     return {
         "ram_delta_mb": round(
             after["process_ram_mb"] - before["process_ram_mb"], 2
@@ -51,6 +48,7 @@ def measure_memory_delta(before: dict, after: dict) -> dict:
             after["system_ram_used_mb"] - before["system_ram_used_mb"], 2
         ),
         "peak_process_ram_mb": after["process_ram_mb"],
+        "system_ram_available_mb": after["system_ram_available_mb"],
         "gpu_available": after["gpu_available"],
         "gpu_ram_used_mb": after["gpu_ram_used_mb"],
         "gpu_name": after["gpu_name"],

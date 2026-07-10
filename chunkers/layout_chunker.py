@@ -2,68 +2,59 @@ import re
 from typing import List
 
 
-def parse_unstructured_content(content: str) -> List[dict]:
+def parse_content(content: str) -> List[dict]:
     """
-    Parse the output from Unstructured loader which has format:
-    [ElementType]
-    content text here
-
-    Returns list of elements with their type and content.
+    Parse Docling Markdown output into elements.
+    Handles # ## ### headers and | table rows.
     """
     elements = []
-    # Split on element type tags like [Title], [NarrativeText] etc.
-    blocks = re.split(r'\n\n(?=\[)', content)
 
-    for block in blocks:
-        block = block.strip()
-        if not block:
+    for line in content.split("\n"):
+        line_stripped = line.strip()
+        if not line_stripped:
             continue
 
-        # Extract element type from [Type] prefix
-        type_match = re.match(r'^\[([^\]]+)\]\n(.+)', block, re.DOTALL)
-        if type_match:
-            element_type = type_match.group(1).strip()
-            element_content = type_match.group(2).strip()
+        if line_stripped.startswith("### "):
+            elements.append({
+                "type": "Title",
+                "content": line_stripped[4:],
+                "level": 3
+            })
+        elif line_stripped.startswith("## "):
+            elements.append({
+                "type": "Title",
+                "content": line_stripped[3:],
+                "level": 2
+            })
+        elif line_stripped.startswith("# "):
+            elements.append({
+                "type": "Title",
+                "content": line_stripped[2:],
+                "level": 1
+            })
+        elif line_stripped.startswith("|"):
+            elements.append({
+                "type": "Table",
+                "content": line_stripped,
+                "level": 0
+            })
         else:
-            element_type = "NarrativeText"
-            element_content = block
-
-        elements.append({
-            "type": element_type,
-            "content": element_content
-        })
+            elements.append({
+                "type": "NarrativeText",
+                "content": line_stripped,
+                "level": 0
+            })
 
     return elements
 
 
-def chunk(
-    content: str,
-    max_tokens: int = 512,
-    source_loader: str = "unstructured"
-) -> List[dict]:
+def chunk(content: str, max_tokens: int = 512) -> List[dict]:
     """
-    Create layout-aware chunks using detected element types.
-    Inspired by RAGFlow's layout chunking strategy.
-
-    Rules (same as RAGFlow):
-    - Title element → always starts a new chunk
-    - Table element → always its own atomic chunk (never split)
-    - Image/Figure → its own chunk with caption if available
-    - NarrativeText → grouped with current section heading
-    - Footer/Header → skipped (noise)
-
-    Args:
-        content: extracted text from Unstructured loader
-                 (contains [ElementType] tags)
-        max_tokens: max tokens per chunk
-        source_loader: which loader produced this content
-
-    Returns:
-        list of layout-aware chunk dicts
+    Layout-aware chunking using Docling Markdown structure.
+    Titles start new chunks. Tables are atomic. Text accumulates.
     """
     max_chars = max_tokens * 4
-
-    elements = parse_unstructured_content(content)
+    elements = parse_content(content)
 
     if not elements:
         return []
@@ -73,22 +64,17 @@ def chunk(
     current_content = []
     current_length = 0
     current_heading = ""
-
-    # Elements to skip — these are noise not content
-    skip_types = {"Footer", "Header", "PageNumber"}
+    skip_types = {"Footer", "Header"}
 
     for element in elements:
         etype = element["type"]
         econtent = element["content"]
 
-        # Skip noise elements
         if etype in skip_types:
             continue
 
-        # Tables are atomic — always their own chunk
-        # Never split a table across chunks (RAGFlow rule)
+        # tables: atomic chunks
         if etype == "Table":
-            # First save whatever we have so far
             if current_content:
                 joined = "\n\n".join(current_content)
                 chunks.append({
@@ -104,7 +90,6 @@ def chunk(
                 current_content = []
                 current_length = 0
 
-            # Table as its own chunk
             chunks.append({
                 "chunk_index": chunk_index,
                 "content": econtent,
@@ -117,9 +102,8 @@ def chunk(
             chunk_index += 1
             continue
 
-        # Title/Heading → start new chunk boundary (RAGFlow rule)
+        # titles: start new chunks
         if etype == "Title":
-            # Save current chunk first
             if current_content:
                 joined = "\n\n".join(current_content)
                 chunks.append({
@@ -135,13 +119,12 @@ def chunk(
                 current_content = []
                 current_length = 0
 
-            # Update current heading
             current_heading = econtent
             current_content.append(econtent)
             current_length = len(econtent)
             continue
 
-        # Regular content — add to current chunk
+        # regular text
         if current_length + len(econtent) > max_chars and current_content:
             joined = "\n\n".join(current_content)
             chunks.append({
@@ -160,7 +143,6 @@ def chunk(
         current_content.append(econtent)
         current_length += len(econtent)
 
-    # Save final chunk
     if current_content:
         joined = "\n\n".join(current_content)
         chunks.append({

@@ -19,7 +19,6 @@ def extract(file_path: str) -> dict:
             "force_ocr": False,
             "workers": 1,
             "batch_multiplier": 1,
-            "torch_device": "cpu",
         }
 
         config_parser = ConfigParser(config)
@@ -43,21 +42,18 @@ def extract(file_path: str) -> dict:
         return {
             "loader": loader_name,
             "status": "success",
+            "pages": "N/A",
             "time_sec": elapsed,
             "total_chars": len(content),
             "total_lines": len(lines),
             "non_empty_lines": len(non_empty),
             "has_table_structure": "|" in content,
-            "has_headers": any(l.startswith("#") for l in lines),
-            "has_equations": "$$" in content or "\\[" in content,
-            "images_extracted": len(images) if images else 0,
             "has_numbers": any(c.isdigit() for c in content),
+            "images_detected": len(images) if images else 0,
+            "has_headers": any(l.startswith("#") for l in lines),
+            "has_equations": "$$" in content,
             "content": content,
             "memory": measure_memory_delta(mem_before, mem_after),
         }
     except Exception as e:
-        return {
-            "loader": loader_name,
-            "status": "failed",
-            "error": str(e)
-        }
+        return {"loader": loader_name, "status": "failed", "error": str(e)}

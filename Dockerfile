@@ -20,7 +20,6 @@ WORKDIR /app
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir --timeout=300 torch
-RUN pip install --no-cache-dir --timeout=300 marker-pdf
 RUN pip install --no-cache-dir --timeout=300 docling
 RUN pip install --no-cache-dir --timeout=300 -r requirements.txt
 
@@ -28,10 +27,53 @@ COPY . .
 
 RUN mkdir -p test_pdfs results && chmod -R 777 test_pdfs results
 
-# Pre-download Docling models during build
-RUN python -c "from docling.document_converter import DocumentConverter, PdfFormatOption; from docling.datamodel.pipeline_options import PdfPipelineOptions; from docling.datamodel.base_models import InputFormat; opts = PdfPipelineOptions(); opts.do_ocr = False; opts.do_table_structure = True; DocumentConverter(format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}); print('Docling models ready.')"
 
-# Pre-download Unstructured models during build
-RUN python -c "from unstructured.partition.pdf import partition_pdf; print('Unstructured models ready.')" || echo "Skipped"
+ENV HF_HOME=/root/.cache/huggingface
+ENV TRANSFORMERS_CACHE=/root/.cache/huggingface
+ENV SENTENCE_TRANSFORMERS_HOME=/root/.cache/huggingface
+
+ENV HF_HUB_OFFLINE=0
+
+# Download embedding model
+RUN python - <<'EOF'
+from sentence_transformers import SentenceTransformer
+
+SentenceTransformer(
+    "sentence-transformers/all-MiniLM-L6-v2"
+)
+
+print("Embedding model downloaded")
+EOF
+
+
+# Download Unstructured hi_res model
+RUN python - <<'EOF'
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    repo_id="unstructuredio/yolo_x_layout"
+)
+
+print("Unstructured hi_res model downloaded")
+EOF
+
+
+# Download Docling models
+RUN python - <<'EOF'
+from pathlib import Path
+from docling.utils.model_downloader import download_models
+
+download_models(
+    output_dir=Path("/root/.cache/docling/models")
+)
+
+print("Docling models downloaded")
+EOF
+
+
+ENV DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models
+
+ENV HF_HUB_OFFLINE=1
+ENV TRANSFORMERS_OFFLINE=1
 
 CMD ["python", "run_extraction.py"]

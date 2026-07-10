@@ -10,11 +10,10 @@ def extract(file_path: str) -> dict:
         mem_before = get_memory_snapshot()
         start = time.time()
 
-        loader = PyPDFLoader(file_path)
-        docs = loader.load()
+        docs = PyPDFLoader(file_path).load()
         elapsed = round(time.time() - start, 2)
-
         mem_after = get_memory_snapshot()
+
         content = "\n\n".join(d.page_content for d in docs)
 
         return {
@@ -26,12 +25,10 @@ def extract(file_path: str) -> dict:
             "total_lines": len(content.split("\n")),
             "has_table_structure": "|" in content,
             "has_numbers": any(c.isdigit() for c in content),
+            "images_detected": 0,
+            "has_headers": False,
             "content": content,
             "memory": measure_memory_delta(mem_before, mem_after),
         }
     except Exception as e:
-        return {
-            "loader": loader_name,
-            "status": "failed",
-            "error": str(e)
-        }
+        return {"loader": loader_name, "status": "failed", "error": str(e)}

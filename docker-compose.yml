@@ -3,12 +3,26 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.linux
+
     container_name: pdf-extraction-tool
+
     volumes:
       - ./test_pdfs:/app/test_pdfs
       - ./results:/app/results
+
     environment:
       - PYTHONUNBUFFERED=1
       - SKIP_MARKER=false
+
+      - DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models
+
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
+      - HF_DATASETS_OFFLINE=1
+
+      - HF_HOME=/root/.cache/huggingface
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface
+      - SENTENCE_TRANSFORMERS_HOME=/root/.cache/huggingface
+
     stdin_open: true
     tty: true

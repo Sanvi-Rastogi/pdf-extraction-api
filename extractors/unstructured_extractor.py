@@ -19,7 +19,6 @@ def extract(file_path: str, strategy: str = "fast") -> dict:
         elapsed = round(time.time() - start, 2)
         mem_after = get_memory_snapshot()
 
-        # Count element types
         element_types = {}
         for doc in docs:
             etype = doc.metadata.get("category", "Unknown")
@@ -42,26 +41,12 @@ def extract(file_path: str, strategy: str = "fast") -> dict:
             "total_chars": len(content),
             "total_lines": len(content.split("\n")),
             "has_table_structure": "Table" in element_types,
-            "images_detected": element_types.get("Image", 0),
-            "element_types": element_types,
             "has_numbers": any(c.isdigit() for c in content),
+            "images_detected": element_types.get("Image", 0),
+            "has_headers": "Title" in element_types,
+            "element_types": element_types,
             "content": content,
             "memory": measure_memory_delta(mem_before, mem_after),
         }
-    except ImportError as e:
-        # Specific message for missing system dependencies on Linux
-        return {
-            "loader": loader_name,
-            "status": "failed",
-            "error": (
-                f"Missing dependency: {e}. "
-                f"On Linux ensure libmagic1 is installed: "
-                f"apt-get install libmagic1"
-            )
-        }
     except Exception as e:
-        return {
-            "loader": loader_name,
-            "status": "failed",
-            "error": str(e)
-        }
+        return {"loader": loader_name, "status": "failed", "error": str(e)}

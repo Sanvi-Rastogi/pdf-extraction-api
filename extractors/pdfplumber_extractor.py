@@ -17,17 +17,13 @@ def extract(file_path: str) -> dict:
             page_count = len(pdf.pages)
             for page_num, page in enumerate(pdf.pages):
                 page_text = page.extract_text() or ""
-
                 tables = page.extract_tables()
                 table_text = ""
                 for t_idx, table in enumerate(tables):
-                    table_text += f"\n[TABLE {t_idx+1} - Page {page_num+1}]\n"
+                    table_text += f"\n[TABLE {t_idx+1} on page {page_num+1}]\n"
                     for row in table:
-                        cleaned = [
-                            str(c).strip() if c else "" for c in row
-                        ]
+                        cleaned = [str(c).strip() if c else "" for c in row]
                         table_text += " | ".join(cleaned) + "\n"
-
                 all_content.append(
                     f"--- Page {page_num+1} ---\n{page_text}\n{table_text}"
                 )
@@ -45,12 +41,10 @@ def extract(file_path: str) -> dict:
             "total_lines": len(content.split("\n")),
             "has_table_structure": "|" in content,
             "has_numbers": any(c.isdigit() for c in content),
+            "images_detected": 0,
+            "has_headers": False,
             "content": content,
             "memory": measure_memory_delta(mem_before, mem_after),
         }
     except Exception as e:
-        return {
-            "loader": loader_name,
-            "status": "failed",
-            "error": str(e)
-        }
+        return {"loader": loader_name, "status": "failed", "error": str(e)}
