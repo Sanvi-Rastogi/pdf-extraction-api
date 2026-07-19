@@ -19,11 +19,11 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir --timeout=300 torch
+RUN pip install --no-cache-dir --timeout=300 \
+    --index-url https://download.pytorch.org/whl/cpu \
+    torch==2.7.1 torchvision==0.22.1
 RUN pip install --no-cache-dir --timeout=300 docling
 RUN pip install --no-cache-dir --timeout=300 -r requirements.txt
-
-COPY . .
 
 RUN mkdir -p test_pdfs results && chmod -R 777 test_pdfs results
 
@@ -75,5 +75,7 @@ ENV DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models
 
 ENV HF_HUB_OFFLINE=1
 ENV TRANSFORMERS_OFFLINE=1
+
+COPY . .
 
 CMD ["python", "run_extraction.py"]

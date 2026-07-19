@@ -1,4 +1,5 @@
 import time
+import os
 from utils.memory_tracker import get_memory_snapshot, measure_memory_delta
 
 
@@ -26,6 +27,28 @@ def extract(file_path: str) -> dict:
 
         result = converter.convert(file_path)
         content = result.document.export_to_markdown()
+
+        # ── Read image content if Ollama is available ─────────────────────────
+        # This replaces <!-- image --> placeholders with actual descriptions
+        ollama_host = os.getenv("OLLAMA_HOST", "")
+        images_content = ""
+
+        if ollama_host:
+            try:
+                from extractors.image_reader import extract_and_describe_images
+                print("  Reading image content with LLaVA...")
+                images_content = extract_and_describe_images(file_path)
+                if images_content:
+                    # Replace <!-- image --> tags with note about descriptions
+                    content = content.replace(
+                        "<!-- image -->",
+                        "[See Extracted Image Content section below]"
+                    )
+                    # Append image descriptions at end
+                    content += images_content
+            except Exception as e:
+                print(f"  Image reading skipped: {e}")
+
         elapsed = round(time.time() - start, 2)
         mem_after = get_memory_snapshot()
 
@@ -42,7 +65,7 @@ def extract(file_path: str) -> dict:
             "non_empty_lines": len(non_empty),
             "has_table_structure": "|" in content,
             "has_numbers": any(c.isdigit() for c in content),
-            "images_detected": 0,
+            "images_detected": content.count("[See Extracted Image Content"),
             "has_headers": any(l.startswith("#") for l in lines),
             "content": content,
             "memory": measure_memory_delta(mem_before, mem_after),

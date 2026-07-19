@@ -25,7 +25,6 @@ RUN pip install --no-cache-dir --timeout=300 marker-pdf
 RUN pip install --no-cache-dir --timeout=300 docling
 RUN pip install --no-cache-dir --timeout=300 -r requirements.txt
 
-COPY . .
 
 RUN mkdir -p test_pdfs results \
     && chmod -R 777 test_pdfs results
@@ -91,5 +90,6 @@ ENV DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models
 ENV HF_HUB_OFFLINE=1
 ENV TRANSFORMERS_OFFLINE=1
 
+COPY . .
 
 CMD ["python", "run_extraction.py"]
