@@ -9,6 +9,7 @@ services:
     volumes:
       - ./test_pdfs:/app/test_pdfs
       - ./results:/app/results
+      - ./vector_store:/app/vector_store
 
     environment:
       - PYTHONUNBUFFERED=1
