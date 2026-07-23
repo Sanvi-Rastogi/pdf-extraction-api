@@ -18,6 +18,9 @@ def extract(file_path: str) -> dict:
         opts = PdfPipelineOptions()
         opts.do_ocr = False
         opts.do_table_structure = True
+        opts.generate_page_images = True
+        opts.generate_picture_images = True
+        opts.images_scale = 2.0
 
         converter = DocumentConverter(
             format_options={
@@ -26,25 +29,22 @@ def extract(file_path: str) -> dict:
         )
 
         result = converter.convert(file_path)
+
         content = result.document.export_to_markdown()
 
-        # ── Read image content if Ollama is available ─────────────────────────
-        # This replaces <!-- image --> placeholders with actual descriptions
         ollama_host = os.getenv("OLLAMA_HOST", "")
         images_content = ""
 
         if ollama_host:
             try:
                 from extractors.image_reader import extract_and_describe_images
-                print("  Reading image content with LLaVA...")
-                images_content = extract_and_describe_images(file_path)
+                print("  Reading image content with Ollama...")
+                images_content = extract_and_describe_images(result.document)
                 if images_content:
-                    # Replace <!-- image --> tags with note about descriptions
                     content = content.replace(
                         "<!-- image -->",
                         "[See Extracted Image Content section below]"
                     )
-                    # Append image descriptions at end
                     content += images_content
             except Exception as e:
                 print(f"  Image reading skipped: {e}")

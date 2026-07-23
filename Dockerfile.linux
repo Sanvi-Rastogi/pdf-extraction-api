@@ -19,8 +19,9 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir --timeout=300 torch \
-    --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir --timeout=300 \
+    --index-url https://download.pytorch.org/whl/cpu \
+    torch==2.7.1 torchvision==0.22.1
 RUN pip install --no-cache-dir --timeout=300 marker-pdf
 RUN pip install --no-cache-dir --timeout=300 docling
 RUN pip install --no-cache-dir --timeout=300 -r requirements.txt

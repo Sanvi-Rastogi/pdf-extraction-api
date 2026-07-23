@@ -24,6 +24,7 @@ services:
       - TRANSFORMERS_CACHE=/root/.cache/huggingface
       - SENTENCE_TRANSFORMERS_HOME=/root/.cache/huggingface
       - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=moondream
     depends_on:
       - ollama
 
@@ -34,7 +35,6 @@ services:
     image: ollama/ollama:latest
     container_name: ollama
     volumes:
-      # Persist downloaded models so they survive container restart
       - ./ollama_models:/root/.ollama
     ports:
       - "11434:11434"
