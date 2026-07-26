@@ -2,7 +2,6 @@ from typing import List
 
 
 def extract_markdown_tables(content: str) -> List[dict]:
-    """Extract Markdown tables from Docling output as atomic chunks."""
     chunks = []
     chunk_index = 0
     lines = content.split("\n")
@@ -46,7 +45,6 @@ def extract_markdown_tables(content: str) -> List[dict]:
 
 
 def extract_non_table_text(content: str) -> str:
-    """Remove all Markdown table blocks from content."""
     lines = content.split("\n")
     non_table_lines = []
     i = 0
@@ -64,10 +62,6 @@ def extract_non_table_text(content: str) -> str:
 
 
 def chunk(content: str, max_tokens: int = 512) -> List[dict]:
-    """
-    Chunk Docling markdown with table preservation.
-    Tables are atomic chunks. Non-table text uses naive chunker.
-    """
     from chunkers.naive_chunker import chunk as naive_chunk
 
     table_chunks = extract_markdown_tables(content)

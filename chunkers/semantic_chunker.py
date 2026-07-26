@@ -9,10 +9,6 @@ def split_into_sentences(text: str) -> List[str]:
 
 
 def get_embeddings(sentences: List[str]) -> np.ndarray:
-    """
-    Load sentence transformer from Docker cached models only.
-    No internet required.
-    """
     from sentence_transformers import SentenceTransformer
     import os
 

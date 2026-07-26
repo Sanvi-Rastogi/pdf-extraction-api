@@ -78,4 +78,4 @@ ENV TRANSFORMERS_OFFLINE=1
 
 COPY . .
 
-CMD ["python", "run_extraction.py"]
+CMD ["fastapi", "run", "api.py", "--host", "0.0.0.0", "--port", "8000"]

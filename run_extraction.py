@@ -94,7 +94,6 @@ def save_chunks(
 
 # Chunking
 def run_chunking(results: dict, pdf_name: str):
-    """Run all 4 chunking strategies on Docling output only."""
     console.print(Panel(
         "[bold cyan]Running Chunking on Docling Output...[/bold cyan]",
         title="CHUNKING"

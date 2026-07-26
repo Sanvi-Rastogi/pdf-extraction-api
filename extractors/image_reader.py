@@ -20,11 +20,6 @@ Be concise but complete.
 """
 
 def describe_image(image_b64: str, page: int, index: int) -> str:
-    """
-    Send image to the vision model running in Ollama.
-    Returns a description of the image.
-    Runs completely offline.
-    """
     try:
         response = requests.post(
             f"{OLLAMA_HOST}/api/generate",
@@ -57,9 +52,6 @@ def describe_image(image_b64: str, page: int, index: int) -> str:
 
 
 def extract_and_describe_images(document) -> str:
-    """
-    Read Docling pictures directly and describe them with Ollama.
-    """
 
     pictures = document.pictures
     print("Found images:", len(pictures))

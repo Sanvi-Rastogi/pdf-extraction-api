@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile.linux
 
     container_name: pdf-extraction-tool
+    ports:
+      - "8000:8000"
 
     volumes:
       - ./test_pdfs:/app/test_pdfs

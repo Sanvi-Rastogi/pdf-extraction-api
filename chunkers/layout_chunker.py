@@ -3,10 +3,6 @@ from typing import List
 
 
 def parse_content(content: str) -> List[dict]:
-    """
-    Parse Docling Markdown output into elements.
-    Handles # ## ### headers and | table rows.
-    """
     elements = []
 
     for line in content.split("\n"):
@@ -49,10 +45,6 @@ def parse_content(content: str) -> List[dict]:
 
 
 def chunk(content: str, max_tokens: int = 512) -> List[dict]:
-    """
-    Layout-aware chunking using Docling Markdown structure.
-    Titles start new chunks. Tables are atomic. Text accumulates.
-    """
     max_chars = max_tokens * 4
     elements = parse_content(content)
 
@@ -73,7 +65,6 @@ def chunk(content: str, max_tokens: int = 512) -> List[dict]:
         if etype in skip_types:
             continue
 
-        # tables: atomic chunks
         if etype == "Table":
             if current_content:
                 joined = "\n\n".join(current_content)
@@ -102,7 +93,6 @@ def chunk(content: str, max_tokens: int = 512) -> List[dict]:
             chunk_index += 1
             continue
 
-        # titles: start new chunks
         if etype == "Title":
             if current_content:
                 joined = "\n\n".join(current_content)
@@ -124,7 +114,6 @@ def chunk(content: str, max_tokens: int = 512) -> List[dict]:
             current_length = len(econtent)
             continue
 
-        # regular text
         if current_length + len(econtent) > max_chars and current_content:
             joined = "\n\n".join(current_content)
             chunks.append({
