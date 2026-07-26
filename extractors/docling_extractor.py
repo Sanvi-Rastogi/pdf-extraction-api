@@ -16,7 +16,7 @@ def extract(file_path: str) -> dict:
         start = time.time()
 
         opts = PdfPipelineOptions()
-        opts.do_ocr = False
+        opts.do_ocr = True
         opts.do_table_structure = True
         opts.generate_page_images = True
         opts.generate_picture_images = True
