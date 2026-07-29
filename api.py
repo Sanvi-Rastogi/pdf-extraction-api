@@ -64,7 +64,7 @@ def run_chunker(content: str, strategy: str) -> dict:
         "layout": lambda c: layout_chunker.chunk(c, max_tokens=512),
         "table": lambda c: table_chunker.chunk(c, max_tokens=512),
         "semantic": lambda c: semantic_chunker.chunk(
-            c, max_tokens=512, similarity_threshold=0.3
+            c, max_tokens=512, similarity_threshold=0.5
         ),
     }
 
@@ -381,7 +381,24 @@ async def query(
 
     all_results.sort(key=lambda x: x["similarity"], reverse=True)
 
+    top_results = all_results[:top_k]
+
+    output_path = RESULTS_DIR / "last_query_results.json"
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "question": question,
+                "top_k": top_k,
+                "total_results": len(top_results),
+                "results": top_results,
+            },
+            f,
+            indent=2,
+        )
+
     return JSONResponse(content={
         "question": question,
-        "results": all_results[:top_k]
+        "total_results": len(top_results),
+        "results": top_results
     })
